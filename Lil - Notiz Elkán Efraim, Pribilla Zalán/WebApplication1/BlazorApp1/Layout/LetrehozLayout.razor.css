@@ -1,0 +1,822 @@
+﻿::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #ffd700, #cba010);
+    border-radius: 15px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins',sans-serif;
+}
+
+/*mentes blur*/
+
+.blur {
+    position: absolute;
+    z-index: 100;
+    width: 100%;
+    height: 120vh;
+    backdrop-filter: blur(40px);
+    background-color: rgba(255, 255, 255, 0.1); /* áttetsző */
+    display: none;
+}
+
+.mentes {
+    z-index: 101;
+    display: none;
+    position: absolute;
+    top: 40%;
+    transform: translateX(-50%);
+    left: 50%;
+    background-color: #66A9DE;
+    border-radius: 20px;
+    padding: 10px;
+    height: 120px;
+    width: auto;
+    overflow: hidden;
+    font-size: 18px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.elemekmentes {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    padding: 10px;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: row;
+}
+
+.mentesgombok {
+    padding: 15px;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    text-shadow: 2px 2px 4px black;
+    cursor: pointer;
+    background-color: #323FCB;
+    color: #A2F1EE;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.2s linear;
+}
+
+    .mentesgombok:hover {
+        background-color: #A2F1EE;
+        color: #323FCB;
+        text-shadow: none;
+        transform: translateY(-1px);
+        box-shadow: 3px 4px 6px black;
+        border: 1px groove rgb(0, 0, 0);
+    }
+
+        .mentesgombok:hover:last-child {
+            background-color: rgb(225, 82, 82);
+            color: white;
+            border: 1px groove rgb(255, 255, 255);
+        }
+
+
+/* A sidebar css-e */
+.sidebar {
+    position: fixed;
+    height: 100%;
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient( 180deg,rgb(101, 115, 123),rgb(61, 55, 55));
+    transition: all 0.2s linear;
+}
+
+.scroll {
+    overflow: auto;
+    height: 60%;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.5) !important;
+}
+
+.scroll-inner {
+    color: white;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    top: 5%;
+    list-style: none;
+    flex-direction: column;
+}
+
+
+
+    .scroll-inner li {
+        user-select: none;
+        text-align: center;
+        padding: 10px;
+        width: 100%;
+        color: black;
+        font-size: 20px;
+        margin-bottom: 12px;
+        transition: 0.2s all linear;
+        box-shadow: 0 0 4px rgba(255,255,255, 0.5);
+        border-radius: 35px;
+    }
+
+        .scroll-inner li:hover {
+            cursor: pointer;
+            text-shadow: rgba(0, 0, 0,0.4) 4px 3px 3px;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+
+
+        .scroll-inner li.active::before, li:hover::before {
+            transform: translateY(-2px);
+            filter: invert(1);
+        }
+
+
+.fejlec {
+    user-select: none;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    color: #fff;
+    font-size: 25px;
+    line-height: 60px;
+    font-weight: 700;
+    text-shadow: rgba(0, 0, 0,0.4) 3px 3px;
+    text-decoration: none;
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 48%;
+}
+
+.hozzaad {
+    font-size: 18px !important;
+    color: white;
+    cursor: pointer;
+}
+
+
+.fiok-navbar {
+    border-left: white solid 1px;
+    border-radius: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(180deg, #93928c, #d9d5c9);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.icon {
+    position: relative;
+    top: 3px;
+    font-size: 1em;
+    /* line-height: 57px; */
+}
+
+a {
+    text-decoration: none;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease 0.1s;
+}
+
+    a:hover {
+        text-shadow: black 5px 5px 2px;
+        color: white;
+    }
+
+
+/* vonalak a modositasokat végző elemek alatt */
+
+h2 {
+    position: relative;
+    font-size: 23px;
+    color: white;
+}
+
+
+
+
+    h2::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -3px;
+        width: 100%;
+        height: 3px;
+        background: #fff;
+        border-radius: 5px;
+        transform-origin: right;
+        transform: scaleX(0);
+        transition: transform 0.55s;
+    }
+
+    h2:hover::after {
+        transform-origin: left;
+        transform: scaleX(1);
+    }
+
+
+footer ion-icon {
+    color: white;
+    position: relative;
+    top: 4px;
+}
+
+
+
+/* fiokbeállitas css-e */
+
+.dropdown {
+    position: relative;
+    margin: 2em;
+}
+
+    .dropdown * {
+        user-select: none;
+        box-sizing: border-box;
+    }
+
+.select {
+    background-color: transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.select-clicked {
+    box-shadow: 0 0 0.8rem grey;
+    border-radius: 10px;
+}
+
+.dropdown:hover .menu {
+    display: block;
+    opacity: 1;
+}
+
+.dropdown .caret i {
+    transition: transform 0.3s ease-in-out 0.1s; /* 0.1s késleltetés */
+}
+
+.dropdown:hover .caret i {
+    font-weight: bold;
+    transition: all 0.2s ease 0.1s;
+    transform: rotate(-180deg);
+}
+
+
+.menu {
+    list-style: none;
+    padding: 0.2em 0.5em;
+    border: 1px gray solid;
+    background-color: #93928c;
+    border-radius: 0.5em;
+    position: absolute;
+    top: 50px;
+    left: 2%;
+    width: auto;
+    opacity: 0;
+    display: none;
+    transition: 0.2s;
+    z-index: 1;
+}
+
+.navikon {
+    font-size: 20px;
+}
+
+.menu li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.7em 0.5em;
+    border-radius: 0.5em;
+    cursor: pointer;
+    transition: 0.3s all ease;
+}
+
+    .menu li:hover {
+        background-color: rgb(28, 28, 28);
+        color: #fff;
+    }
+
+.active {
+    background-color: transparent;
+}
+
+.menu-open {
+    display: block;
+    opacity: 1;
+}
+
+
+
+
+.content /*ugymond ez lesz a body, az a rész ami nem a sidebar */ {
+    position: relative;
+    overflow: auto;
+    background: linear-gradient( 180deg,#1c2841, rgb(49, 49, 109));
+    height: 100vh;
+    left: 350px;
+    width: calc(100% - 350px);
+}
+
+
+/* a tábla felület */
+
+.work {
+    padding-left: 1%;
+    padding-top: 1%;
+    height: 100%;
+    position: relative;
+}
+
+
+/*projekt elnevezése*/
+
+
+.wrapper-hidden {
+    display: none;
+    z-index: -3;
+}
+
+
+.projektnev h3 {
+    margin-bottom: 100px;
+    font-size: 40px;
+    color: white;
+    text-shadow: rgb(23, 128, 101) 3px 3px 3px;
+}
+
+.projektnev input {
+    background-color: transparent;
+    color: white;
+    text-shadow: rgb(253, 253, 253) 1px 1px 1px;
+    text-align: center;
+    border-top: 2px white solid;
+    border-bottom: 2px white solid;
+    border-left: none;
+    border-right: none;
+    width: 400px;
+    height: 100px;
+    font-size: 27px;
+    outline: none;
+    text-transform: capitalize;
+    transition: 0.2s all ease;
+}
+
+    .projektnev input:hover {
+        border: 2px white solid;
+        border-radius: 8px;
+    }
+
+.projektnev span {
+    position: absolute;
+    bottom: 8%;
+    color: white;
+    font-size: 35px;
+    right: 25%;
+    transition: all 0.2s ease;
+}
+
+    .projektnev span:hover {
+        background-color: #f7f5ef;
+        color: black;
+        padding-top: 5px;
+        transform: translateY(-2px);
+        border-radius: 10px;
+        text-align: center;
+    }
+
+
+.projektnev {
+    position: relative;
+    height: 50%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    transform: translateY(25%);
+}
+
+.tablazat {
+    position: fixed;
+    color: white;
+    transform: translateY(50%);
+    height: 50%;
+    text-align: center;
+    user-select: none;
+}
+
+table {
+    position: relative;
+    transform: translateX(-0%);
+    border-collapse: collapse;
+    width: 50%; /* 100%-os szélesség */
+    max-width: 1200px; /* Maximális szélesség (nagy monitorokon is megfelelő) */
+}
+
+table, th, td {
+    padding: 3px;
+    border: 1px solid white;
+    vertical-align: top;
+}
+
+thead tr td {
+    border: 3px rgb(66, 92, 100) solid;
+    background-color: #0d2436;
+    font-size: 17px;
+    text-align: center;
+}
+
+table input {
+    border: 2px rgb(40, 68, 75) solid;
+    outline: none;
+    color: #0d2436;
+    border-radius: 5px;
+    background-color: transparent;
+    height: 40px;
+    margin-top: 10px;
+    text-align: center;
+    width: 130px;
+    text-transform: capitalize;
+    font-size: 15px;
+}
+
+tbody td {
+    background-color: #5de9ca;
+    transition: 0.4s all ease 0.1s;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+    tbody td:hover {
+        background-color: #2ab193;
+    }
+
+table input::placeholder {
+    font-size: 13px;
+    color: #101455;
+    font-weight: 600;
+    opacity: 0.4;
+}
+
+#ifNameExists {
+    display: none;
+}
+
+    #ifNameExists.show {
+        display: block;
+        animation: fadeInMove 0.2s ease-in-out forwards;
+    }
+
+@keyframes fadeInMove {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+h3 {
+    color: white;
+    font-size: 25px;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    transition: 0.2s all ease;
+}
+
+    h3:hover {
+        text-shadow: #5de9ca 1px 2px 3px;
+    }
+
+.cim {
+    color: white;
+    text-align: right;
+    font-size: 18px;
+}
+
+.projektcim {
+    color: white;
+    text-align: center;
+}
+
+    .projektcim span {
+        font-weight: 800;
+        text-transform: capitalize;
+    }
+
+
+/*dropdown a táblázatban*/
+
+.dropdown2 {
+    position: relative;
+}
+
+    .dropdown2 * {
+        user-select: none;
+        box-sizing: border-box;
+    }
+
+.select2 {
+    background-color: transparent;
+    align-items: center;
+    padding: 15px;
+    margin-right: 30px;
+    margin-bottom: 10px;
+    color: black;
+    font-weight: 600;
+    margin-left: 30px;
+    transition: background-color 0.3s ease;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 150px;
+}
+
+.select-clicked2 {
+    box-shadow: 0 0 0.8rem grey;
+    border-radius: 10px;
+}
+
+.dropdown2 .caret2 {
+    transition: transform 0.3s ease-in-out 0.1s;
+    font-size: 20px;
+}
+
+.dropdown2:hover .caret2 {
+    font-weight: bold;
+    transition: all 0.2s ease 0.1s;
+    transform: rotate(-180deg);
+}
+
+
+.menu2 {
+    list-style: none;
+    padding: 0.2em 0.5em;
+    border: 1px gray solid;
+    background-color: #215f52;
+    backdrop-filter: blur(30px);
+    border-radius: 0.5em;
+    max-height: 300px;
+    overflow-y: auto;
+    position: absolute;
+    top: 100%;
+    left: 15%;
+    width: auto;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    z-index: 1;
+}
+
+.selected2 
+{
+    padding:15px;
+    border:2px black solid;
+    border-radius:7px;
+    outline:none;
+    background-color:transparent;
+    font-weight:400;
+}
+
+.selected3 {
+    padding: 15px;
+    border: 2px black solid;
+    border-radius: 7px;
+    outline: none;
+    background-color: transparent;
+    font-weight: 400;
+}
+
+    .selected3 option {
+        text-align: center;
+        color: black;
+        background-color: #248f6b;
+    }
+
+
+.selected2 option {
+    text-align: center;
+    color: black;
+    background-color: #248f6b;
+}
+
+
+.dropdown2:hover .menu2 {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+
+.navikon2 {
+    font-size: 20px;
+}
+
+.menu2 li {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    padding: 0.7em 0.5em;
+    border-radius: 0.5em;
+    cursor: pointer;
+    transition: 0.3s all ease;
+}
+
+    .menu2 li:hover {
+        background-color: rgb(28, 28, 28);
+        color: white;
+    }
+
+.active2 {
+    background-color: transparent;
+}
+
+
+
+.menu-open2 {
+    display: block;
+    opacity: 1;
+}
+
+.blurall {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(128, 128, 128, 0.323);
+    backdrop-filter: blur(45px);
+    z-index: 101;
+}
+
+.ujtabla {
+    background-color: white;
+    border-radius: 20px;
+    padding: 10px;
+    position: absolute;
+    z-index: 110;
+    text-align: center;
+    top: 30%;
+    left: 30%;
+    user-select: none;
+}
+
+
+    .ujtabla p {
+        font-size: 20px;
+        color: black;
+        font-weight: 500;
+    }
+
+.elemek {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+    .elemek button {
+        font-size: 15px;
+        width: 200px;
+        height: 40px;
+        border: none;
+        transition: all 0.2s ease 0.1s;
+    }
+
+        .elemek button:hover {
+            background-color: grey;
+            color: white;
+        }
+
+/*kattintása másolhato szoveg*/
+.notizid {
+    user-select: none;
+    position: absolute;
+    top: 10%;
+    right: 2%;
+    color: white;
+    font-size: 15px;
+}
+
+.masol {
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+}
+
+    .masol::before {
+        content: "Másolva";
+        position: absolute;
+        top: 100%; /* Közvetlenül az elem alá kerül */
+        left: 50%;
+        transform: translateX(-50%); /* Középre igazítás */
+        padding: 5px 10px;
+        border-radius: 15px;
+        color: white;
+        background-color: #31c6ce;
+        font-size: 12px;
+        display: none;
+        white-space: nowrap;
+    }
+
+    .masol.active::before {
+        display: block;
+    }
+
+    /*reszponzivitás*/
+
+@media only screen and (max-width:630px) 
+{
+
+    .sidebar 
+    {
+        width: 150px;
+    }
+
+
+
+    .content /*ugymond ez lesz a body, az a rész ami nem a sidebar */ {
+        left: 150px;
+        width: calc(100% - 150px) !important;
+    }
+
+
+    .scroll-inner li 
+    {
+        font-size:15px;
+        text-align:center;
+    }
+
+    .hozzaad 
+    {
+        font-size:15px;
+    }
+
+    h2 
+    {
+        position:absolute;
+        left:20%;
+        font-size:18px;
+    }
+
+    footer {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 38%;
+    }
+
+    .fejlec 
+    {
+        font-size:18px;
+        text-align:center;
+        line-height: 40px !important;
+    }
+
+    .fiok-navbar 
+    {
+        height:80px !important;
+        width:230%;
+    }
+
+
+
+}

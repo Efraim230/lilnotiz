@@ -1,0 +1,625 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigate
+@inject ItemService akarmi
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+
+@using BlazorApp1.Service
+@using CommonLibrary
+
+@code
+{
+    bool? contentvan = null;
+    private void contentvanmeghivas()
+    {
+        contentvan = true;
+
+    }
+
+    private ElementReference listElement;
+    private bool _jsInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            _jsInitialized = true;
+            await JSRuntime.InvokeVoidAsync("notizPopup.init");
+            await Task.Delay(500); // Késleltetés, hogy biztosan létezzen az elem
+            await JSRuntime.InvokeVoidAsync("initializeClickEvents", listElement);
+            await Task.Delay(100);
+            await JSRuntime.InvokeVoidAsync("checkListItems");
+            await Task.Delay(100);
+            await JSRuntime.InvokeVoidAsync("bindModositasClick");
+        }
+    }
+
+    public async Task ujra()
+    {
+        await JSRuntime.InvokeVoidAsync("initializeClickEvents", listElement);
+    }
+
+    private List<Notiz> notizLista = new();
+    private List<Felhasznalok2> felhasznalokLista = new();
+
+    List<string> NOTIZIDLISTA = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        notizLista = await akarmi.GetNotiz();
+        felhasznalokLista = await akarmi.GetItems();
+
+
+
+        // Felhasználóhoz tartozó NOTIZID-k betöltése
+        foreach (var item in felhasznalokLista)
+        {
+            if (item.felhasznaloNev.Equals(akarmi.Username) && item.FELHASZNALONOTIZID != null)
+            {
+                for (int i = 0; i < item.FELHASZNALONOTIZID.Count(); i += 5)
+                {
+                    string aktualis = "";
+
+                    if (item.FELHASZNALONOTIZID.Length >= i + 5)
+                    {
+                        aktualis = $"{item.FELHASZNALONOTIZID[i]}{item.FELHASZNALONOTIZID[i + 1]}{item.FELHASZNALONOTIZID[i + 2]}{item.FELHASZNALONOTIZID[i + 3]}{item.FELHASZNALONOTIZID[i + 4]}";
+                        if (!NOTIZIDLISTA.Contains(aktualis))
+                        {
+                            NOTIZIDLISTA.Add(aktualis);
+                        }
+                    }
+                }
+            }
+
+
+
+
+        }
+
+    }
+
+    // private List<string> felhasznaloKodLista => 
+
+    bool? dontes = null;
+    string kod = "";
+
+
+
+
+
+
+    public void KodAlapjanBedobas()
+    {
+
+
+
+        dontes = true;
+        bool dobas = true;
+
+        foreach (var item in notizLista)
+        {
+            if (item.NOTIZID.Equals(kod))
+            {
+                dobas = false;
+                break;
+            }
+        }
+
+        if (dobas)
+        {
+            return;
+        }
+
+        foreach (var item in NOTIZIDLISTA)
+        {
+            if (item.Equals(kod))
+            {
+                return;
+
+            }
+        }
+
+
+
+        NOTIZIDLISTA.Add(kod);
+
+
+
+    }
+
+    bool? fromSideOpeningBool = null;
+
+
+    private string? kivalasztottKod = null;
+
+
+
+    private void KivalasztottKodBeallitasa(string kod)
+    {
+
+
+        kivalasztottKod = kod;
+        dontes = true;
+    }
+
+    private bool? NotiztorlesFeldobasBool = null;
+    private string TorolniKivantKod = "";
+
+
+    private void NotizTorlesFeldobas()
+    {
+        NotiztorlesFeldobasBool = true;
+
+
+    }
+
+    private void NotizTortlesElrejtes()
+    {
+        NotiztorlesFeldobasBool = false;
+    }
+
+
+
+    private async void NotizVeglegesTorles()
+    {
+        NOTIZIDLISTA.RemoveAll(item => item.Equals(TorolniKivantKod));
+    }
+
+
+
+
+
+
+    private string statusMessage = "";
+
+    private async Task RemoveNotiz()
+    {
+        // Ide a bejelentkezett felhasználó nevét tedd!
+
+        if (string.IsNullOrWhiteSpace(TorolniKivantKod) || TorolniKivantKod.Length != 5)
+        {
+            statusMessage = "A NotizID pontosan 5 karakter hosszú kell legyen!";
+            return;
+        }
+
+        bool success = await akarmi.RemoveNotizIdAsync(akarmi.Username, TorolniKivantKod);
+
+        if (success)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "A kívánt Notiz sikeresen törölve!");
+        }
+        else
+        { 
+            await JSRuntime.InvokeVoidAsync("alert", "Nem sikerült a törlés");
+        }
+    }
+
+
+
+
+    private string FelhasznaloNev = string.Empty;
+    private string EloreMeghatarozottNotiz = "ABC12"; // Itt tároljuk a fix értéket
+    private string Message = string.Empty;
+
+
+    //Menti a megadott projekteket, illetve kijelentkezik
+    private async Task FelhasznalohozNotizIdHozzaadas()
+    {
+        bool success = await akarmi.AddFelhasznaloNotizAsync(akarmi.Username, kod);
+        Message = success ? "Sikeresen frissítve!" : "Hiba történt.";
+        //Kijelentkezés 
+        akarmi.Username = null;
+        Navigate.NavigateTo("/",forceLoad:true);
+
+    }
+
+
+    private async Task Mentes()
+    {
+        await Task.Delay(200);
+        bool success = await akarmi.AddFelhasznaloNotizAsync(akarmi.Username, kod);
+        Message = success ? "Sikeresen frissítve!" : "Hiba történt.";
+    }
+
+    string modositashozKod;
+
+
+    bool? TudEDobniModositasOldalhozBool = null;
+
+    
+
+    public void ModositasOldalraBedobas()
+    {
+
+        
+        if (NOTIZIDLISTA.Contains(modositashozKod))
+        {
+            Navigate.NavigateTo("/modositas");
+            akarmi.ModositaniKivantNotizIdProp = modositashozKod;
+            TudEDobniModositasOldalhozBool = true;
+
+        }
+        else
+        {
+            TudEDobniModositasOldalhozBool = false;
+            JSRuntime.InvokeVoidAsync("alert", "nem létező notizkód");
+        }
+    }
+
+    public void feldobasNemSikerult()
+    {
+        if (TudEDobniModositasOldalhozBool == false)
+        {
+            JSRuntime.InvokeVoidAsync("alert", "nem létező notizkód");
+        }
+
+    }
+
+
+   
+
+
+}
+
+<HeadContent>
+    <meta charset="UTF-8">
+    <meta name="theme-color" content="#1bb566"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel="stylesheet">
+</HeadContent>
+
+
+<body>
+
+    <!-- popup div, ha hozzá akarsz adni egy meglévő notizt -->
+    <div class="blurzero" id="blur"></div>
+    <div class="popupzero" id="popup">
+        <p>Egy notiz kódját add meg itt és meg is tekintheted a teendőidet a projekteddel kapcsolatban.</p>
+        <input type="text" @bind="kod" placeholder="Pl:12345">
+        <h5><span @onclick="()=>{KodAlapjanBedobas();Mentes();}" class="hozzaad" style="color:black;">Projekt hozzáadása</span></h5>
+
+    </div>
+
+
+
+    <nav class="sidebar">
+        <header class="fejlec"> Projektjeid</header>
+        <div class="scroll">
+
+
+            <ul class="scroll-inner" @ref="listElement" id="myList">
+                @foreach (var item in NOTIZIDLISTA)
+                {
+                    contentvanmeghivas();
+                    <li @onclick="() => {KivalasztottKodBeallitasa(item);ujra();}" style="cursor:pointer;">
+                        @foreach (var item2 in notizLista)
+                        {
+                            if (item.Equals(item2.NOTIZID))
+                            {
+                                @item2.ProjektNev <div style="font-size:smaller; margin-left:30px">Notiz Kód: @item</div>
+
+
+                                break;
+                            }
+                        }
+                    </li>
+                }
+
+            </ul>
+
+
+        </div>
+        <footer>
+
+            <h2><ion-icon name="create"></ion-icon> <span class="hozzaad"><a href="/weather"> Notiz létrehozása </a> </span></h2><br>
+            <h2 ><ion-icon name="build"></ion-icon> <span class="hozzaad"><a id="modositasgomb"> Notiz módosítása </a> </span></h2><br>
+            <h2><ion-icon name="add-circle-outline"></ion-icon> <span class="hozzaad"><a id="notizAdd"> Notiz hozzáadása </a> </span></h2><br>
+            <h2><ion-icon name="trash"></ion-icon><span class="hozzaad" @onclick="NotizTorlesFeldobas"><a> Notiz törlése </a> </span></h2><br>
+
+
+
+
+
+
+        </footer>
+    </nav>
+
+
+    <!-- ebbe van minden ami nem a sidebar(class="content") -->
+    <div class="content">
+
+
+        <!-- fejléc -->
+        <nav class="fiok-navbar">
+
+            <p class="navuser">
+                Üdvözöllek, <span style="color: rgb(33, 112, 177);font-weight:bolder;">@akarmi.Username</span>!
+            </p>
+
+            <div class="fiokbeallitas">
+
+
+                <!-- dropdown menu -->
+                <div class="icon-responsive" id="katt">
+                    <span class="dropresponsive" ><ion-icon name="menu-outline"></ion-icon></span>
+                </div>
+
+                <div class="dropdown">
+                    <div class="select">
+                        <span class="selected">
+                            <span class="icon">
+                                <ion-icon name="person"></ion-icon>
+                            </span>
+
+                            <span class="fiokom"> Fiókom
+                            </span>
+                            <span class="caret">
+                                <i class="bx bx-chevron-down"></i>
+                            </span>
+                        </span>
+                    </div>
+                    <ul class="menu" id="dropmenu">
+                        <li>
+                            <span class="navikon">
+                                <ion-icon name="settings"></ion-icon>
+                            </span>
+                            Profilom beállításai
+                        </li>
+                        <li>
+                            <span class="navikon">
+                                <ion-icon name="log-out"></ion-icon>
+                            </span>
+                            <span @onclick="FelhasznalohozNotizIdHozzaadas"> Kijelentkezés </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- dropdownvege -->
+
+            </div>
+
+        </nav>
+
+        <!-- fejléc vége -->
+
+
+        <div class="work">
+
+            <!-- ha nincs egy projekt se még beálíltva -->
+            @if (!contentvan.HasValue)
+            {
+                <div id="ifnull" class="ifnull">
+
+
+
+                    <p> Itt lesznek a projektjeid, ahol módosíthatod, megtekintheted őket!</p>
+                    <p> Ha még nincsen projekted,  <span style="user-select:none;">létrehozhatsz újat,</span> vagy <span style="user-select:none;"> csatlakozhatsz </span> egy már meglévőbe!</p>
+
+                </div>
+
+                <div class="gif" id="gif">
+                    <video width="250px" height="250px" autoplay muted loop>
+                        <source src="Project management.mp4">
+                    </video>
+
+                </div>
+
+
+            }
+            <!-- ha már van projekt, akkor innentől kezdve látszódik minden csak -->
+
+
+            <table>
+
+                @*        @if (contentvan.HasValue)
+            {
+
+
+
+                } *@
+
+                @if (dontes.HasValue && contentvan.HasValue && !string.IsNullOrEmpty(kivalasztottKod))
+                {
+                    <thead>
+                        <tr>
+                            <td>
+                                <label>Tulajdonos:</label>
+                            </td>
+
+                            <td>
+                                <label>Feladat:</label>
+                            </td>
+
+                            <td>
+                                <label>Állapot:</label>
+                            </td>
+
+                            <td>
+                                <label>Kezdés:</label>
+                            </td>
+
+                            <td>
+                                <label>Határidő:</label>
+                            </td>
+
+                            <td>
+                                <label>Fontosság:</label>
+                            </td>
+
+                            <td>
+                                <label>Komment:</label>
+                            </td>
+
+                        </tr>
+                    </thead>
+
+                    @foreach (var item in notizLista.Where(n => n.NOTIZID == kivalasztottKod))
+                    {
+                        <tr>
+                            <td>@item.Tulajdonos</td>
+                            <td>@item.Feladat</td>
+                            <td>@item.Allapot</td>
+                            <td>@item.MikorKezdje</td>
+                            <td>@item.HatarIdo</td>
+                            <td>@item.FOntossag</td>
+                            <td>@item.Komment</td>
+                        </tr>
+                    }
+
+                }
+
+            </table>
+
+
+
+
+
+            @if (NotiztorlesFeldobasBool.HasValue)
+            {
+
+                @if (NotiztorlesFeldobasBool == true)
+                {
+                    <div class="input-container">
+                        <input type="text" id="input-1" @bind="TorolniKivantKod" placeholder="Törölni kívánt Notiz kódja:">
+                        <button @onclick="() => {NotizVeglegesTorles(); RemoveNotiz(); }" id="submit-btn-1" class="submit-btn">Törlés!</button>
+                        <button @onclick="NotizTortlesElrejtes" id="clear-btn-1" class="clear-btn">❌</button>
+                    </div>
+
+                }
+            }
+
+
+
+
+
+        </div>
+
+    </div>
+
+
+    @* Modositas *@
+
+    <div id="modositas" class="modositas">
+        <p style="position:relative;top:10px;color:white;">Itt add meg a módosítani kívánt projekt Notizid-jét!</p>
+        <div class="modositasrendezes">
+
+            <input class="input-group" style="text-align:center;" type="number" @bind="modositashozKod" placeholder="Notizid" />
+            <button @onclick="ModositasOldalraBedobas"> Módosítás</button>
+        </div>
+        
+    </div>
+   
+
+    @* modositas vége *@
+
+
+    <script>
+
+        
+            window.bindModositasClick = function() {
+                const mod = document.getElementById("modositas");
+                const modgomb = document.getElementById("modositasgomb");
+                if (mod && modgomb)
+                {
+                    modgomb.addEventListener('click', function() {
+                        mod.classList.toggle('modositasactive');
+                    });
+                }
+            }
+        
+
+
+
+
+        const xd=document.getElementById("katt");
+        const lol = document.getElementById("dropmenu");
+
+        xd.addEventListener('click',function(e)
+        {
+            e.stopPropagation();
+            lol.classList.toggle('menutoggle');
+        
+        }
+        )
+
+                document.addEventListener('click', function (event) {
+            const isClickInsideMenu = lol.contains(event.target) || xd.contains(event.target);
+            if (!isClickInsideMenu) {
+                lol.classList.remove('menutoggle');
+            }
+        });
+
+      
+
+        //JS a sidebar ul-hez(leginkább az active osztály aktiválása a kiválasztott elemre)
+        window.initializeClickEvents = (listElement) => {
+            const list = listElement instanceof HTMLElement ? listElement : listElement.getElementsByTagName ? listElement : null;
+
+            if (!list) return;
+
+            list.querySelectorAll("li").forEach(li => {
+                li.addEventListener("click", function () {
+                    list.querySelectorAll("li").forEach(item => item.classList.remove("active"));
+                    this.classList.add("active");
+                });
+            });
+        };
+
+            //ifnull classok
+        window.checkListItems = function () {
+            const ul = document.getElementById("myList");
+            if (!ul) {
+                console.log("Még nincs projekt megadva");
+                return;
+            }
+
+            const ifnull = document.getElementById("ifnull");
+            const gif = document.getElementById("gif");
+
+            if (ul.querySelector("li")) {
+                ifnull?.classList.add("ifnullvan");
+                gif?.classList.add("gifvan");
+            } else {
+                ifnull?.classList.remove("ifnullvan");
+                gif?.classList.remove("gifvan");
+            }
+        };
+
+
+
+        //popup divek a notiz hozzáadásához
+
+        window.notizPopup = {
+            init: function () {
+                const notizLink = document.getElementById("notizAdd");
+                const blur = document.getElementById("blur");
+                const popup = document.getElementById("popup");
+
+                if (!notizLink || !blur || !popup) return;
+
+                // Megnyitás
+                notizLink.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    blur.classList.remove("blurzero");
+                    blur.classList.add("blurall");
+                    popup.classList.remove("popupzero");
+                    popup.classList.add("popup");
+                });
+
+                // Bezárás kattintásra a popupon kívül
+                document.addEventListener("click", function (event) {
+                    if (!popup.contains(event.target) && event.target !== notizLink) {
+                        blur.classList.remove("blurall");
+                        blur.classList.add("blurzero");
+                        popup.classList.remove("popup");
+                        popup.classList.add("popupzero");
+                    }
+                });
+            }
+        };
+
+    </script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+
+   
+
+</body>

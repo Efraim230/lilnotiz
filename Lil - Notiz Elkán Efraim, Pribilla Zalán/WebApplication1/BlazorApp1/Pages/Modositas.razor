@@ -1,0 +1,284 @@
+﻿@page "/modositas"
+@using BlazorApp1.Service
+@using CommonLibrary
+@inject ItemService akarmi
+@inject NavigationManager Navigation
+
+
+
+@code {
+    public List<Notiz> betoltottNotizLista = new();
+    public List<Notiz> aKIVALASZTOTTAK = new();
+    public string EfiSegitseg;
+
+    protected override async Task OnInitializedAsync()
+    {
+        betoltottNotizLista = await akarmi.GetNotiz();
+
+        Console.WriteLine(betoltottNotizLista?.Count());
+
+        foreach (var item in betoltottNotizLista)
+        {
+            if (item.NOTIZID.Equals(akarmi.ModositaniKivantNotizIdProp))
+            {
+                aKIVALASZTOTTAK.Add(item);
+                EfiSegitseg = item.ProjektNev;
+            }
+        }
+
+
+    }
+
+
+    private async Task FelhasznalohozNotizIdHozzaadas()
+    {
+  
+        //Kijelentkezés
+        akarmi.Username = null;
+        Navigation.NavigateTo("/", forceLoad: true);
+
+    }
+
+
+
+
+
+    Notiz szerkesztettNotiz = null;
+    
+
+    void SzerkesztesInditasa(Notiz item)
+    {
+        szerkesztettNotiz = item;
+    }
+
+
+    async Task FrissitesekMentese()
+    {
+        foreach (var item in aKIVALASZTOTTAK)
+        {
+            bool siker = await akarmi.UpdateNotiz(item);
+            if (!siker)
+            {
+                Console.WriteLine($"Nem sikerült menteni az ID={item.ID} rekordot.");
+            }
+        }
+        szerkesztettNotiz = null;
+    }
+
+    public async Task UjNotizAdatBazis()
+    {
+        await Task.Delay(200);
+        Navigation.NavigateTo("/counter");
+
+    }
+
+
+
+}
+
+
+<HeadContent>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel="stylesheet">
+</HeadContent>
+<html>
+    <head>
+
+      <link rel="stylesheet" href="css/modositas.css"/>
+
+    </head>
+<body>
+    
+    @* navbar *@
+    <nav class="fiok-navbar">
+        <p>Kedves <span style="color:blue;">@akarmi.Username</span>, ezen az oldalon tudod módosítani a projekted részleteit!</p>
+
+        @* dropdown *@
+
+        <div class="fiokbeallitas">
+
+
+            <!-- dropdown menu -->
+            <div class="icon-responsive" id="katt">
+                <span class="dropresponsive"><ion-icon name="menu-outline"></ion-icon></span>
+            </div>
+
+            <div class="dropdown">
+                <div class="select">
+                    <span class="selected">
+                        <span class="icon">
+                            <ion-icon name="person"></ion-icon>
+                        </span>
+
+                        <span class="fiokom">
+                            Fiókom
+                        </span>
+                        <span class="caret">
+                            <i class="bx bx-chevron-down"></i>
+                        </span>
+                    </span>
+                </div>
+                <ul class="menu" id="dropmenu">
+                    <li>
+                        <span class="navikon">
+                            <ion-icon name="settings"></ion-icon>
+                        </span>
+                        Profilom beállításai
+                    </li>
+                    <li>
+                        <span class="navikon">
+                            <ion-icon name="log-out"></ion-icon>
+                        </span>
+                        <span @onclick="FelhasznalohozNotizIdHozzaadas"> Kijelentkezés </span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- dropdownvege -->
+
+        </div>
+
+
+
+
+    </nav>
+
+    @* nav vége *@
+
+    <h1 style="text-shadow:1px 1px 5px black;">@EfiSegitseg</h1>
+    <div class="Tabla">
+        <table>
+
+            <thead>
+                <tr>
+                    <td>Tulajdonos</td>
+                    <td>Feladat</td>
+                    <td>Állapot</td>
+                    <td>Mikor kezdje</td>
+                    <td>Határidő</td>
+                    <td>Fontosság</td>
+                    <td>Komment</td>
+                </tr>
+            </thead>
+
+
+            <tbody>
+            @foreach (var item in aKIVALASZTOTTAK)
+            {
+                <tr @ondblclick="@(() => SzerkesztesInditasa(item))">
+                    <td style="user-select:none;">
+                        @if (szerkesztettNotiz == item)
+                        {
+                                <input @bind="item.Tulajdonos" readonly />
+                        }
+                        else
+                        {
+                            @item.Tulajdonos
+                        }
+                    </td>
+
+                    <td>
+                        @if (szerkesztettNotiz == item)
+                        {
+                            <input @bind="item.Feladat" />
+                        }
+                        else
+                        {
+                            @item.Feladat
+                        }
+                    </td>
+
+                    <td>
+                        @if (szerkesztettNotiz == item)
+                        {
+                                <select class="form-select" @bind="@item.Allapot">
+                                    <option value="" style="display:none;">Állapot beállítása</option>
+                                    <option>Kész</option>
+                                    <option>Elkezdve</option>
+                                    <option>Elakadtam</option>
+                                    <option>Nincs elkezdve</option>
+                                </select>
+
+                           
+
+
+
+                        }
+                        else
+                        {
+                            @item.Allapot
+                        }
+                    </td>
+                    <td>
+                        @if (szerkesztettNotiz == item)
+                        {
+                            <input @bind="item.MikorKezdje" />
+                        }
+                        else
+                        {
+                            @item.MikorKezdje
+                        }
+                    </td>
+                    <td>
+                        @if (szerkesztettNotiz == item)
+                        {
+                            <input @bind="item.HatarIdo" />
+                        }
+                        else
+                        {
+                            @item.HatarIdo
+                        }
+                    </td>
+
+                    <td>
+                        @if (szerkesztettNotiz == item)
+                        {
+                                <select class="form-select" @bind="@item.FOntossag">
+                                    <option style="display:none;" value="" disabled selected>Válassz prioritást</option>
+                                    <option>Sürgős</option>
+                                    <option>Hanyagolható</option>
+                                    <option>Fontos</option>
+                                    <option>Nem fontos</option>
+                                </select>
+
+                        }
+                        else
+                        {
+                            @item.FOntossag
+                        }
+                    </td>
+
+
+                    <td>
+                        @if (szerkesztettNotiz == item)
+                        {
+                            <input @bind="item.Komment" />
+                        }
+                        else
+                        {
+                            @item.Komment
+                        }
+                    </td>
+
+
+
+                    
+
+
+                    
+                </tr>
+
+
+            }
+            </tbody>
+        </table>
+
+
+    </div>
+    <button class="frissitgomb" @onclick="FrissitesekMentese">Frissítések mentése</button>
+
+    <button class="gomb" @onclick="UjNotizAdatBazis">Vissza a Főoldalra</button>
+
+</body>
+</html>

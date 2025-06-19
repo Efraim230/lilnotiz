@@ -1,0 +1,491 @@
+﻿@inherits LayoutComponentBase
+@using BlazorApp1.Service
+@using CommonLibrary
+@inject NavigationManager Navigate
+@inject HttpClient httpClient
+
+@inject ItemService akarmi
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+
+
+@code
+{
+    //Kijelentkezés
+
+    private async Task Logout()
+    {
+        akarmi.Username = null;
+        Navigate.NavigateTo("/",forceLoad:true);
+    }
+
+
+    List<tablazatSzemelyek> ujSzemelyek = new();
+    private int notizid = 0;
+
+
+    //notizid generálása
+    private async Task notizIdGeneralas()
+    {
+        Random rnd = new();
+
+        while (true)//elég a true, mert break-kel lépek ki, addig fut le, amig nem talál egy olyan notizid-t ami még nem létezik
+        {
+            int ujId = rnd.Next(10000, 99999);//ugye ez a notizid
+
+            var letezoAzonosito = await akarmi.GetNotizById(ujId.ToString());//ez egy notizid, csak string-gé alakítva, mert az adatbázisban is string-ként van tárolva
+
+            if (letezoAzonosito == null) //Ha nincs még olyan notizid az adatbázisban, amit legeneráltunk, akkor errort kapunk vissza, de ez technikailag nem error
+            {
+                Console.WriteLine("404-es errort kaptam, vagyis még nem létezik ilyen notizid az adatbázisban. Ez nem hiba!!!");
+                notizid = ujId;
+                break;//ciklusból kilépek, mert sikeresen legenerálódott az egyedi notizid
+            }
+
+
+        }
+    }
+
+    //ez azért fog kelleni, hogy eltűnjön a cim bekérő input, ha adtál meg projekt nevet
+    private string ProjectName { get; set; } = ""; //ez a projekt neve
+
+    bool vanProjektnev = false;
+    void setProjektNev()
+    {
+        if (!string.IsNullOrWhiteSpace(ProjectName))
+        {
+            vanProjektnev = true;
+        }
+        else
+        {
+            JSRuntime.InvokeVoidAsync("alert", "Kérlek, adj meg egy projekt nevet!");
+        }
+
+    }
+
+    //egy új sort hozzá lehet adni, deklarálva vannak az adatok,
+    //  majd a bodyban bindingolva vannak ezek az adatok a tbodyban
+
+    class tablazatSzemelyek
+    {
+        public bool IsChecked { get; set; } = false;
+        public string Szemely { get; set; } = "";
+        public string Feladat { get; set; } = "";
+        public string Allapot { get; set; } = "";
+        public DateTime? Kezdes { get; set; } = DateTime.Today; //mai dátum az összes új sorhoz
+        public DateTime? Hatarido { get; set; } = DateTime.Today.AddDays(1);//holnapi dátum az összes új sorhoz
+        public string Fontossag { get; set; } = "";
+        public string Komment { get; set; } = "";
+    }
+
+    private async Task Feltoltes()
+    {
+
+        await Task.Delay(100);
+        akarmi.ProjectName = ProjectName;
+        foreach (var item in ujSzemely)
+        {
+            var ujnotiz = new CommonLibrary.Notiz
+                {
+                    NOTIZID = Convert.ToString(notizid),
+                    Tulajdonos = item.Szemely,
+                    Feladat = item.Feladat,
+                    Allapot = item.Allapot,
+                    MikorKezdje = Convert.ToString(item.Kezdes),
+                    HatarIdo = Convert.ToString(item.Hatarido),
+                    FOntossag = item.Fontossag,
+                    Komment = item.Komment,
+                    ProjektNev=ProjectName
+                };
+
+
+            await akarmi.AddNotiz(ujnotiz);
+        }
+
+
+
+        akarmi.AddFelhasznaloNotizAsync(akarmi.Username, Convert.ToString(notizid));
+
+        await Task.Delay(100);
+
+        Navigate.NavigateTo("/counter");
+    }
+
+    //ez a lista amit feltöltődik
+    List<tablazatSzemelyek> ujSzemely = new() { new tablazatSzemelyek() };
+
+    //Ez meg maga a hozzáadás
+    async Task UjSor()
+    {
+        ujSzemely.Add(new tablazatSzemelyek());
+        await Task.Delay(100);
+    }
+
+    //kiválasztott személyek törlése
+    private void Torles()
+    {
+        ujSzemely = ujSzemely.Where(x => !x.IsChecked).ToList();
+
+    }
+
+    //Új táblázat létrehozása
+    private void UjTabla()
+    {
+        ujSzemely = new List<tablazatSzemelyek> { new tablazatSzemelyek() };
+        HidePopup();
+    }
+
+
+    private async Task ShowPopup()
+    {
+        await JSRuntime.InvokeVoidAsync("showMentesDiv");
+    }
+
+    private async Task HidePopup()
+    {
+        await JSRuntime.InvokeVoidAsync("hideMentesDiv");
+    }
+    //uj tábla vége
+
+
+    //notizid másolása
+    private async Task Masolas()
+    {
+        await JSRuntime.InvokeVoidAsync("copyToClipboard", "masolhatoSzoveg");
+    }
+
+
+
+    private bool _jsInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            _jsInitialized = true;
+            await Task.Delay(500); // Késleltetés, hogy biztosan létezzen az elem
+
+        }
+    }
+    private List<Notiz> notizen = new List<Notiz>();
+
+
+
+    public class Notiz
+    {
+        public int ID { get; set; }
+        public string NOTIZID { get; set; }
+        public string Tulajdonos { get; set; }
+        public string Feladat { get; set; }
+        public string Allapot { get; set; }
+        public string MikorKezdje { get; set; }
+        public string HatarIdo { get; set; }
+        public string FOntossag { get; set; }
+        public string Komment { get; set; }
+    }
+
+
+    private void UpdateFontossag(tablazatSzemelyek item, string ujErtek)
+    {
+        item.Fontossag = ujErtek;
+    }
+
+    private async Task ShowMentes()
+    {
+        await Task.Delay(200);
+        await JSRuntime.InvokeVoidAsync("showMentesDiv");
+    }
+
+    private async Task HideMentes()
+    {
+        await Task.Delay(200);
+        await JSRuntime.InvokeVoidAsync("hideMentesDiv");
+    }
+
+}
+
+<HeadContent>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel="stylesheet">
+</HeadContent>
+
+
+<body>
+
+     @* blur illetve mentés div *@
+    <div class="blur"></div>
+    <div class="mentes">
+        Mentésre kerül minden adat és vissza mész a főoldalra?
+        <div class="elemekmentes">
+
+            <button class="mentesgombok" @onclick="Feltoltes">Adatok mentése</button>
+            <button class="mentesgombok" @onclick="HideMentes">Mégse</button>
+        </div>
+
+    </div>
+
+
+    @* uj tábla létrehozása div *@
+    <div id="ujtablapopup" style="display:none;">
+        <div class="blurall"></div>
+        <div class="ujtabla">
+            <div class="elemek">
+                <p>Szeretnéd törölni az összes megadott adatot és új táblát létrehozni?</p>
+                <button @onclick="UjTabla" class="button1">Új tábla létrehozása</button>
+                <button @onclick="HidePopup">Mégse</button>
+            </div>
+        </div>
+    </div>
+
+    @* tábla létrehozása vége *@
+
+    <nav class="sidebar">
+        <header class="fejlec"> Projekt létrehozása</header>
+        <div class="scroll">
+            <ul class="scroll-inner">
+
+                <li @onclick="UjSor">Személy hozzáadása</li>
+                <li @onclick="Torles">Személy törlése</li>
+                <li @onclick="ShowMentes">Táblázat mentése</li> @*  *@
+                <li @onclick="ShowPopup">Új projekt létrehozása</li>
+
+            </ul>
+
+        </div>
+        <footer>
+
+            <h2><ion-icon name="build"></ion-icon> <span class="hozzaad"><a href="/counter"> Vissza a főoldalra </a> </span></h2><br>
+
+        </footer>
+    </nav>
+
+
+    <!-- ebbe van minden ami nem a sidebar(class="content") -->
+    <div class="content">
+
+
+        <!-- fejléc -->
+        <nav class="fiok-navbar">
+
+            <p>
+                Kedves, <span style="color: rgb(33, 112, 177);font-weight:bolder;">@akarmi.Username</span>, ezen az oldalon tudsz létrehozni új projektet!
+            </p>
+
+            <div class="fiokbeallitas">
+
+
+                <!-- dropdown menu -->
+                <div class="dropdown">
+                    <div class="select">
+                        <span class="selected">
+                            <span class="icon">
+                                <ion-icon name="person"></ion-icon>
+                            </span>
+
+                            Fiókom <span class="caret">
+                                <i class="bx bx-chevron-down"></i>
+                            </span>
+                        </span>
+                    </div>
+                    <ul class="menu">
+                        <li>
+                            <span class="navikon">
+                                <ion-icon name="settings"></ion-icon>
+                            </span>
+                            Profilom beállításai
+                        </li>
+                        <li>
+                            <span class="navikon">
+                                <ion-icon name="log-out"></ion-icon>
+                            </span>
+                            <span @onclick="Logout"> Kijelentkezés</span>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <!-- dropdownvege -->
+
+            </div>
+        </nav>
+
+        <!-- fejléc vége -->
+        <div class="work">
+
+            <!-- ha meg adtad a projekted címét ez a wrapper div eltűnik -->
+            <div id="wrapper">
+                <div class="projektnev">
+                    <h3>Első lépésként add meg a projekted nevét:</h3>
+
+                    <input id="projektNev" @bind="ProjectName" type="text" placeholder="Pl:Autószerelés" />
+                    <span id="nyilIkon" @onclick="notizIdGeneralas"> <ion-icon name="arrow-forward-outline"></ion-icon></span>
+                </div>
+            </div>
+
+
+            <!-- csak akkor jelenik meg a táblázat, ha van projekt név -->
+            <div id="ifNameExists" style="@(vanProjektnev ? "display:block":"display:none")">
+
+                <p class="projektcim">Projekted neve:<input type="text" @bind="ProjectName" style="border:none;text-transform:capitalize;background-color:transparent; color:white; margin-left:15px;" /><span id="cim" style="display:none; visibility:hidden;">@ProjectName</span></p> @* id="cim" *@
+                <h3>Itt állíthatod be a projekted részleteit</h3>
+
+
+           @*      <p class="notizid">
+                    A projekted saját azonosítója:
+                    <span id="masolhatoSzoveg" class="masol" @onclick="Masolas">
+                        @notizid
+                    </span>
+                </p> *@
+
+
+
+                <div class="tablazat">
+                    <table style="border:none;">
+                        <thead>
+                            <tr>
+                                <td style="border: none;background-color: transparent; border-color: transparent; width: 30px !important;"></td>
+                                <td>Személy</td>
+                                <td>Feladata</td>
+                                <td>Állapot</td>
+                                <td>Kezdés Időpontja</td>
+                                <td>Határidő</td>
+                                <td>Fontosság</td>
+                                <td>Komment</td>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in ujSzemely)
+                            {
+
+                                <tr>
+                                    <td><input id="check" @bind="item.IsChecked" type="checkbox" style="padding: 0 !important;width: 20px; height: 40px;"></td>
+                                    <td><input type="text" @bind="@item.Szemely" placeholder="Pl: József"></td> <!-- személy -->
+                                    <td><input type="text" @bind="@item.Feladat" placeholder="Pl: Kerékcsere"></td>
+
+                                    <td>
+
+                                                <select class="selected3" @bind="@item.Allapot">
+                                                    <option value="" style="display:none;">Állapot beállítása</option>
+                                                    <option>Kész</option>
+                                                    <option>Elkezdve</option>
+                                                    <option>Elakadtam</option>
+                                                    <option>Nincs elkezdve</option>
+
+                                                </select>
+                                    
+                                    </td>
+
+                                    <td><input type="date" @bind="@item.Kezdes" id="datum"></td>
+                                    <td><input type="date" @bind="@item.Hatarido" id="hatarido"></td>
+
+
+                                    <td>
+                             
+
+
+                                        <select class="selected2" @bind="@item.Fontossag">
+                                            <option style="display:none;" value="" disabled selected>Válassz prioritást</option>
+                                            <option @onclick="@(() => UpdateFontossag(item, "Sürgős"))">Sürgős</option>
+                                            <option @onclick="@(() => UpdateFontossag(item, "Hanyagolható"))">Hanyagolható</option>
+                                            <option @onclick="@(() => UpdateFontossag(item, "Fontos"))">Fontos</option>
+                                            <option @onclick="@(() => UpdateFontossag(item, "Nem fontos"))">Nem fontos</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" @bind="@item.Komment" placeholder="Pl: Dísztárcsa csere" style="text-transform:capitalize !important;">
+                                    </td>
+                                </tr>
+
+
+                                 
+                            }
+                        </tbody>
+
+                    </table>
+                   
+                </div>
+                <!-- táblázat vége -->
+
+
+            </div>
+            <!-- tábálzat wrapper div vége -->
+
+        </div>
+    </div>
+
+
+    <script>
+
+         //blur illetve mentes div megjelenitése, eltüntetése
+
+                window.showMentesDiv = () => {
+            document.querySelector('.blur').style.display = 'block';
+            document.querySelector('.mentes').style.display = 'block';
+        };
+
+        window.hideMentesDiv = () => {
+            document.querySelector('.blur').style.display = 'none';
+            document.querySelector('.mentes').style.display = 'none';
+        };
+
+        //notizid másolás kattintásra
+        window.copyToClipboard = (elementId) => {
+            const elem = document.getElementById(elementId);
+            if (elem) {
+                navigator.clipboard.writeText(elem.textContent).then(() => {
+                    elem.classList.add("active"); // Másolás után megjelenik a ::before
+                    setTimeout(() => elem.classList.remove("active"), 2000); // 2 mp után eltűnik
+                }).catch(err => {
+                    console.error("Hiba történt a másolás során: ", err);
+                });
+            }
+        };
+
+
+        //uj tábla
+
+        window.showPopup = () => {
+            document.getElementById("ujtablapopup").style.display = "block";
+        };
+
+        window.hidePopup = () => {
+            document.getElementById("ujtablapopup").style.display = "none";
+        };
+
+        //uj tábla vége
+
+        //animáció a táblázaton
+
+        document.getElementById("nyilIkon").addEventListener("click", function () {
+            let projectName = document.getElementById("projektNev").value.trim();
+            let tableWrapper = document.getElementById("ifNameExists");
+
+
+
+            if (projectName !== "") {
+                tableWrapper.classList.add("show"); // Animáció elindítása
+            }
+
+            document.getElementById('cim').innerHTML = ` ${projectName}`
+        });
+        //nyíl gombnyomás +
+        //ha megadtad a projekt nevét, eltúnik ez a tartalom
+
+        document.getElementById("nyilIkon").addEventListener("click", function () {
+            let input = document.getElementById("projektNev");
+            let wrapper = document.getElementById("wrapper");
+            let ifNameExists = document.getElementById("ifNameExists");
+
+            if (input.value.trim() === "") {
+                alert("Kérlek, adj meg egy projekt címet!");
+            } else {
+                alert("A projekted neve: " + input.value);
+                wrapper.classList.add("wrapper-hidden");
+                ifNameExists.style.display = "block";
+            }
+        });
+    </script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+
+</body>

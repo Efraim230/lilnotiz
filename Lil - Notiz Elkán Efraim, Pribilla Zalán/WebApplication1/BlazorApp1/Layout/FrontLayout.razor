@@ -1,0 +1,379 @@
+﻿@inherits LayoutComponentBase
+@using BlazorApp1.Service
+@using CommonLibrary
+@inject ItemService akarmi
+@inject NavigationManager Navigation
+@inject Microsoft.JSInterop.IJSRuntime js
+
+<PageTitle> Prime Notiz</PageTitle>
+
+
+@code {
+    private bool _jsInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_jsInitialized)
+        {
+            _jsInitialized = true;
+            await Task.Delay(100);
+            await js.InvokeVoidAsync("switchToLogin");
+        }
+
+    }
+
+
+    
+
+    string nevB = "";
+    string jelszoB = "";
+    string emailB = "";
+    private bool? megvan = null;
+    private bool? megvan2 = null;
+
+    private string regFelhasznaloNev="";
+    private string regEmail = "";
+    private string regJelszo = "";
+
+
+    public List<Felhasznalok2> felhasznalokLista = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        felhasznalokLista = await akarmi.GetItems();
+    }
+
+    private void Megnezes()
+    {
+        foreach (var item in felhasznalokLista)
+        {
+            if (item.felhasznaloNev.Equals(nevB) && item.jelszo.Equals(jelszoB))
+            {
+                akarmi.Username = nevB;
+                megvan = true;
+                break;
+            }
+
+            else
+            {
+                megvan = false;
+            }
+        }
+    }
+
+    private async Task BillentyuKezelo(KeyboardEventArgs e)
+    {
+        
+        if (e.Key == "Enter")
+        {
+            Megnezes();
+        }
+    }
+
+
+
+
+
+    //Regisztráció logika
+    private async Task Regisztracio()
+    {
+        if (felhasznalokLista.Any(van=> van.felhasznaloNev.Equals(regFelhasznaloNev)))
+        {
+            megvan2 = false;
+
+            await Task.Delay(100);
+            await js.InvokeVoidAsync("RegHaLetezikFelh");
+
+            return;
+        }
+
+        var ujFelhasznalo = new Felhasznalok2
+            {
+                felhasznaloNev = regFelhasznaloNev,
+                email = regEmail,
+                jelszo = regJelszo
+            };
+
+        if (string.IsNullOrWhiteSpace(regJelszo))
+        {
+            megvan2 = false;
+            await Task.Delay(100);
+            await js.InvokeVoidAsync("regNincsJelszo");
+
+        }
+
+
+        if (string.IsNullOrWhiteSpace(regFelhasznaloNev))
+        {
+            await Task.Delay(100);
+            await js.InvokeVoidAsync("RegHaNincsNev");
+
+        }
+
+
+        if (!string.IsNullOrWhiteSpace(regFelhasznaloNev) && !string.IsNullOrWhiteSpace(regJelszo) && !string.IsNullOrWhiteSpace(regEmail))
+        {
+            megvan2 = true;
+            await akarmi.AddItem(ujFelhasznalo);
+
+            felhasznalokLista = await akarmi.GetItems();
+
+
+
+            
+            await js.InvokeVoidAsync("RegSikeres");
+
+
+            await Task.Delay(2000);
+         
+            await js.InvokeVoidAsync("switchToLogin");
+        }
+
+    }
+}
+
+
+<body>
+    @Body
+  
+    <header>
+        <h2 class="logo">Lil Notiz</h2>
+        <nav class="navigation">
+            <a onclick="navigate()">Bemutatkozás</a>
+            <button class="btnLogin-popup">Bejelentkezés</button>
+            
+                
+
+        </nav>
+
+
+
+        <span class="responsivemenu" id="menukatt"><ion-icon name="menu-outline"></ion-icon></span>
+        <div class="responsivewrapper" id="wrap">
+            <a>Bemutatkozás</a>
+            <button class="btnLogin-popup">Bejelentkezés</button>
+        </div>
+
+        
+
+
+
+
+    </header>
+
+    <div class="wrapper">
+        <span class="icon-close"><ion-icon name="close-outline"></ion-icon></span>
+
+        <div class="form-box login">
+            <h2 >Bejelentkezés</h2>
+            
+            <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="person-circle-outline">
+
+                        </ion-icon>
+                    </span>
+                    <input @bind="nevB" type="text">
+                    <label>Felhasználónév</label>
+                </div>
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="lock-closed">
+
+                        </ion-icon>
+                    </span>
+                <input @bind="jelszoB" @onkeyup="BillentyuKezelo" type="password">
+                    <label>Jelszó</label>
+                </div>
+
+                <div class="remember-forgot">
+                    <label><input type="checkbox">Emlékezz rám</label>
+                    <a href="#">Elfelejtett jelszó?</a>
+                </div>
+            <button @onclick="Megnezes" class="btn">Bejelentkezés</button>
+                <div class="login-register">
+                    <p>
+                        Nincs fiókod?
+                        <a class="register-link">Regisztráció</a>
+                    </p>
+                </div>
+            <div class="ZalanSzoveg">
+                @if (megvan.HasValue)
+                {
+                    if (megvan == false)
+                    {
+                        <p>
+                            Rossz felhasználónév vagy jelszó!
+                        </p>
+                    }
+                    else
+                    {
+                        Navigation.NavigateTo("counter");
+                    }
+                }
+
+
+
+            </div>
+            
+        </div>
+        
+        @*Regisztráció *@
+        
+        <div class="form-box register" >
+            <h2>Regisztráció</h2>
+            
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="person-circle-outline"></ion-icon>
+                    </span>
+                    <input @bind="regFelhasznaloNev" type="text" required id="regfelh">
+                    <label>Felhasználónév</label>
+                </div>
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="mail">
+
+                        </ion-icon>
+                    </span>
+                <input @bind="regEmail" type="email" required id="regemail">
+                    <label>Email</label>
+                </div>
+                <div class="input-box">
+                    <span class="icon">
+                        <ion-icon name="lock-closed">
+
+                        </ion-icon>
+                    </span>
+                <input @bind="regJelszo" type="password" required id="regjelszo">
+                    <label>Jelszó</label>
+                </div>
+
+                <div class="remember-forgot">
+                    <label><input type="checkbox">ÁSZF-t elfogadom.</label>
+
+                </div>
+            <button @onclick="Regisztracio" type="submit" class="btn">Regisztráció</button>
+                <div class="login-register">
+                    <p>
+                        Van már fiókod?
+                        <a class="login-link">Bejelentkezés</a>
+                    </p>
+            
+
+                </div>
+            <p style="text-align:center;" id="regvisszajelzes"></p>
+            
+        </div>
+
+
+    </div>
+
+    <div class="content">
+        <h2>Üdvözlünk a Lil Notiz Weboldalon!</h2>
+
+        <div class="bemutat">
+            <h3 style="text-align: center;" id="bemut">Bemutatkozás</h3>
+            <p>
+                Készítettünk egy projekt munkákat leegyszerűsító webalkalmazást, amely egyszerű, gyors kezelhetőséget
+                nyújt a kedves felhasználóinknak!
+                <br> Célunk, hogy a csoportos projektek munkafelosztását, illetve a vele járó részleteket digitálisan is
+                lehessen kezelni, ha a távolság vagy éppenséggel az idő nem kedvez a felhasználóinknak.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script>
+
+        const menukatt=document.getElementById("menukatt");
+        const wrapperResponsive=document.getElementById("wrap")
+        menukatt.addEventListener('click', function()
+        {
+                 if (wrapperResponsive.style.display === "block") {
+          wrapperResponsive.style.display = "none";
+        } else {
+          wrapperResponsive.style.display = "block";
+        }
+        })
+
+
+
+        function regNincsJelszo()
+        {
+            document.getElementById("regvisszajelzes").innerHTML = "Adjon meg jelszót!";
+        }
+
+
+        function RegSikeres()
+        {
+            document.getElementById("regvisszajelzes").innerHTML = "Sikeres regisztráció!";
+        }
+
+
+        function RegHaLetezikFelh()
+        {
+            document.getElementById("regvisszajelzes").innerHTML = "Létezik már ilyen felhasználónév!";
+        }
+
+        function RegHaNincsNev()
+        {
+            document.getElementById("regvisszajelzes").innerHTML = "Adjon meg egy felhasználónevet!";
+        }
+
+
+       
+        function switchToLogin() {
+            document.getElementById("regfelh").value='';
+            document.getElementById("regemail").value = '';
+            document.getElementById("regjelszo").value = '';
+            document.getElementById("regvisszajelzes").innerHTML = "";
+
+
+            wrapper.classList.remove('active');
+        }
+
+          function navigate() {
+            const section = document.getElementById('bemut');
+            section.scrollIntoView({ behavior: 'smooth'});
+        }
+
+        function navigate2()
+            {
+                const section = document.getElementById('project');
+                section.scrollIntoView({behavior:'smooth'});
+            }
+
+
+
+        const wrapper = document.querySelector('.wrapper');
+        const loginLink = document.querySelector('.login-link');
+        const registerLink = document.querySelector('.register-link');
+        const btnPopup = document.querySelector('.btnLogin-popup');
+        const iconClose = document.querySelector('.icon-close');
+
+
+        registerLink.addEventListener('click', () => {
+            wrapper.classList.add('active');
+        });
+
+        loginLink.addEventListener('click', () => {
+            wrapper.classList.remove('active');
+        });
+   
+
+        btnPopup.addEventListener('click', () => {
+            wrapper.classList.add('active-popup');
+        });
+
+        iconClose.addEventListener('click', () => {
+            wrapper.classList.remove('active-popup');
+        });
+
+
+    </script>
+</body>
